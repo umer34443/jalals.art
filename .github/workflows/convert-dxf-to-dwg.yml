@@ -1,6 +1,11 @@
 name: Temporary DXF to DWG conversion
 
 on:
+  push:
+    branches: [temp-dwg-conversion-20260802]
+    paths:
+      - 'cad_conversion/**'
+      - '.github/workflows/convert-dxf-to-dwg.yml'
   pull_request:
     branches: [main]
     paths:
