@@ -34,13 +34,14 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y autoconf automake libtool pkg-config make gcc g++ git zlib1g-dev
 
-      - name: Build LibreDWG conversion tools
+      - name: Build required LibreDWG conversion tools
         run: |
           git clone --depth 1 --recurse-submodules --shallow-submodules https://github.com/LibreDWG/libredwg.git /tmp/libredwg
           cd /tmp/libredwg
           autoreconf -fi
           ./configure --disable-bindings --disable-docs --disable-shared --disable-json
-          make -j2
+          make -C src -j2
+          make -C programs dxf2dwg dwgread dwg2dxf -j2
 
       - name: Convert and validate DWG files
         run: |
