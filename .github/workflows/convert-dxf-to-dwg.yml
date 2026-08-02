@@ -18,6 +18,14 @@ jobs:
       - name: Check out conversion branch
         uses: actions/checkout@v4
 
+      - name: Restore DXF sources
+        run: |
+          set -euxo pipefail
+          base64 -d cad_conversion/input/HP.dxf.gz.b64 | gzip -d > cad_conversion/input/AD_DAIMAH_HP_GAS_COMPRESSION_BLOCK_DIAGRAM_REV0.dxf
+          base64 -d cad_conversion/input/LP.dxf.gz.b64 | gzip -d > cad_conversion/input/AD_DAIMAH_LP_GAS_RECOVERY_COMPRESSION_BLOCK_DIAGRAM_REV0.dxf
+          head -n 8 cad_conversion/input/AD_DAIMAH_HP_GAS_COMPRESSION_BLOCK_DIAGRAM_REV0.dxf
+          head -n 8 cad_conversion/input/AD_DAIMAH_LP_GAS_RECOVERY_COMPRESSION_BLOCK_DIAGRAM_REV0.dxf
+
       - name: Install build dependencies
         run: |
           sudo apt-get update
@@ -31,7 +39,7 @@ jobs:
           ./configure --disable-bindings --disable-docs --disable-shared
           make -j2
 
-      - name: Convert the two drawings to AutoCAD R2000 DWG
+      - name: Convert and validate DWG files
         run: |
           set -euxo pipefail
           mkdir -p cad_conversion/output cad_conversion/roundtrip
