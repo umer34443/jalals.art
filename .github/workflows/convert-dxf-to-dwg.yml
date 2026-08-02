@@ -1,0 +1,53 @@
+name: Temporary DXF to DWG conversion
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'cad_conversion/**'
+      - '.github/workflows/convert-dxf-to-dwg.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  convert:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out conversion branch
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y autoconf automake libtool pkg-config make gcc g++ git zlib1g-dev
+
+      - name: Build LibreDWG conversion tools
+        run: |
+          git clone --depth 1 https://github.com/LibreDWG/libredwg.git /tmp/libredwg
+          cd /tmp/libredwg
+          autoreconf -fi
+          ./configure --disable-bindings --disable-docs --disable-shared
+          make -j2
+
+      - name: Convert the two drawings to AutoCAD R2000 DWG
+        run: |
+          set -euxo pipefail
+          mkdir -p cad_conversion/output cad_conversion/roundtrip
+          /tmp/libredwg/programs/dxf2dwg --as r2000 -y -o cad_conversion/output/AD_DAIMAH_HP_GAS_COMPRESSION_BLOCK_DIAGRAM_REV0.dwg cad_conversion/input/AD_DAIMAH_HP_GAS_COMPRESSION_BLOCK_DIAGRAM_REV0.dxf
+          /tmp/libredwg/programs/dxf2dwg --as r2000 -y -o cad_conversion/output/AD_DAIMAH_LP_GAS_RECOVERY_COMPRESSION_BLOCK_DIAGRAM_REV0.dwg cad_conversion/input/AD_DAIMAH_LP_GAS_RECOVERY_COMPRESSION_BLOCK_DIAGRAM_REV0.dxf
+          /tmp/libredwg/programs/dwgread cad_conversion/output/AD_DAIMAH_HP_GAS_COMPRESSION_BLOCK_DIAGRAM_REV0.dwg >/dev/null
+          /tmp/libredwg/programs/dwgread cad_conversion/output/AD_DAIMAH_LP_GAS_RECOVERY_COMPRESSION_BLOCK_DIAGRAM_REV0.dwg >/dev/null
+          /tmp/libredwg/programs/dwg2dxf -y -o cad_conversion/roundtrip/HP_roundtrip.dxf cad_conversion/output/AD_DAIMAH_HP_GAS_COMPRESSION_BLOCK_DIAGRAM_REV0.dwg
+          /tmp/libredwg/programs/dwg2dxf -y -o cad_conversion/roundtrip/LP_roundtrip.dxf cad_conversion/output/AD_DAIMAH_LP_GAS_RECOVERY_COMPRESSION_BLOCK_DIAGRAM_REV0.dwg
+          file cad_conversion/output/*.dwg
+          ls -lh cad_conversion/output cad_conversion/roundtrip
+
+      - name: Upload DWG files
+        uses: actions/upload-artifact@v4
+        with:
+          name: AD_DAIMAH_LP_HP_DWG_REV0
+          path: cad_conversion/output/*.dwg
+          if-no-files-found: error
+          retention-days: 1
