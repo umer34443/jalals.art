@@ -28,8 +28,6 @@ jobs:
           set -euxo pipefail
           base64 -d cad_conversion/input/HP.dxf.gz.b64 | gzip -d > cad_conversion/input/AD_DAIMAH_HP_GAS_COMPRESSION_BLOCK_DIAGRAM_REV0.dxf
           base64 -d cad_conversion/input/LP.dxf.gz.b64 | gzip -d > cad_conversion/input/AD_DAIMAH_LP_GAS_RECOVERY_COMPRESSION_BLOCK_DIAGRAM_REV0.dxf
-          head -n 8 cad_conversion/input/AD_DAIMAH_HP_GAS_COMPRESSION_BLOCK_DIAGRAM_REV0.dxf
-          head -n 8 cad_conversion/input/AD_DAIMAH_LP_GAS_RECOVERY_COMPRESSION_BLOCK_DIAGRAM_REV0.dxf
 
       - name: Install build dependencies
         run: |
@@ -38,10 +36,10 @@ jobs:
 
       - name: Build LibreDWG conversion tools
         run: |
-          git clone --depth 1 https://github.com/LibreDWG/libredwg.git /tmp/libredwg
+          git clone --depth 1 --recurse-submodules --shallow-submodules https://github.com/LibreDWG/libredwg.git /tmp/libredwg
           cd /tmp/libredwg
           autoreconf -fi
-          ./configure --disable-bindings --disable-docs --disable-shared
+          ./configure --disable-bindings --disable-docs --disable-shared --disable-json
           make -j2
 
       - name: Convert and validate DWG files
